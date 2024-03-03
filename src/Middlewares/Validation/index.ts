@@ -58,8 +58,7 @@ const literalSchema = Zod.union([
 	Zod.null(),
 ]);
 type Literal = Zod.infer<typeof literalSchema>;
-type Json = Literal | { [key: string]: Json } | Json[];
-
+export type Json = Literal | { [key: string]: Json } | Json[];
 export const jsonSchema: Zod.ZodType<Json> = Zod.lazy(() =>
 	Zod.union([literalSchema, Zod.array(jsonSchema), Zod.record(jsonSchema)])
 );

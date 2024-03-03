@@ -1,13 +1,12 @@
 import { Router, json } from 'express';
 import * as Z from 'zod';
-import { userManager, transactionManager } from 'src/Supabase';
+import { userManager, transactionManager } from 'src/Controllers';
 import {
 	isDefaultError,
 	jsonSchema,
 	zodValidateBody,
 	zodValidateQuery,
 } from 'src/Middlewares/Validation';
-import { randomUUID } from 'crypto';
 
 const TransactionRouter = Router();
 TransactionRouter.use(json());
@@ -49,7 +48,6 @@ TransactionRouter.post('/', async (req, res) => {
 
 		const userData = await transactionManager.addTransactionBetweenUsers({
 			...transactionData,
-			id: randomUUID(),
 			timestamp: new Date().getTime(),
 			premium: transactionData.premium ?? false,
 		});
