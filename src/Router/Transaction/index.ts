@@ -1,18 +1,19 @@
 import { Router, json } from 'express';
 import * as Z from 'zod';
-import { userManager, transactionManager } from 'src/Controllers';
+import { transactionManager } from 'src/Controllers';
 import {
-	isDefaultError,
 	jsonSchema,
 	zodValidateBody,
 	zodValidateQuery,
 } from 'src/Middlewares/Validation';
+import { safeRequest } from 'src/Middlewares/SafeRequest';
 
 const TransactionRouter = Router();
 TransactionRouter.use(json());
 
-TransactionRouter.get('/', async (req, res) => {
-	try {
+TransactionRouter.get(
+	'/',
+	safeRequest(async (req, res) => {
 		const query = zodValidateQuery(
 			Z.object({
 				id: Z.string(),
@@ -24,15 +25,32 @@ TransactionRouter.get('/', async (req, res) => {
 		const userData = await transactionManager.getTransactionById(id);
 
 		res.send(userData);
-	} catch (e) {
-		if (isDefaultError(e)) {
-			res.status(e.code).send(e.message);
-		}
-	}
-});
+	})
+);
 
-TransactionRouter.post('/', async (req, res) => {
-	try {
+TransactionRouter.get(
+	'/list',
+	safeRequest(async (req, res) => {
+		const { userId } = zodValidateQuery(
+			Z.object({
+				userId: Z.string(),
+			}),
+			req
+		);
+
+		console.log({ userId });
+
+		const transactionList = await transactionManager.getTransactionListByUserId(
+			userId
+		);
+
+		res.send(transactionList);
+	})
+);
+
+TransactionRouter.post(
+	'/',
+	safeRequest(async (req, res) => {
 		const transactionData = zodValidateBody(
 			Z.object({
 				transactionRequestPayload: jsonSchema,
@@ -53,10 +71,6 @@ TransactionRouter.post('/', async (req, res) => {
 		});
 
 		res.send(userData);
-	} catch (e) {
-		if (isDefaultError(e)) {
-			res.status(e.code).send(e.message);
-		}
-	}
-});
+	})
+);
 export default TransactionRouter;

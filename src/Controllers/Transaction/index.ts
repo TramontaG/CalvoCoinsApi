@@ -3,7 +3,7 @@ import { userManager } from '../User';
 import { DbManager } from 'src/Database';
 import { AllEntitiesModel } from 'src/Database/schemas';
 import Crypto from 'crypto';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Filter } from 'firebase-admin/firestore';
 
 const transactionDb = DbManager('transaction');
 
@@ -20,8 +20,6 @@ const TransactionManager = () => {
 			return;
 		}
 
-		console.log({ fromUser, toUser });
-
 		const transactionId = Crypto.randomUUID();
 
 		const transaction = await transactionDb.upsertEntity(transactionId, {
@@ -29,24 +27,46 @@ const TransactionManager = () => {
 			...transactionData,
 		});
 
-		console.log({ transaction });
-
-		const result1 = await userManager.updateUserFromUserId(transactionData.from, {
+		await userManager.updateUserFromUserId(transactionData.from, {
 			transactionHistory: FieldValue.arrayUnion(transactionId),
+			coins: fromUser.coins - transactionData.amount,
 		});
 
-		const result2 = await userManager.updateUserFromUserId(transactionData.to, {
+		await userManager.updateUserFromUserId(transactionData.to, {
 			transactionHistory: FieldValue.arrayUnion(transactionId),
+			coins: toUser.coins + transactionData.amount,
 		});
-
-		console.log({ result1, result2 });
 
 		return transaction;
+	};
+
+	const getTransactionListByUserId = async (userId: string) => {
+		return transactionDb.runQuery(
+			transactionDb.createQuery(query =>
+				query
+					.select(
+						'from',
+						'to',
+						'id',
+						'premium',
+						'timestamp',
+						'transactionOrigin',
+						'transactionRequestPayload'
+					)
+					.where(
+						Filter.or(
+							Filter.where('from', '==', userId),
+							Filter.where('to', '==', 'userId')
+						)
+					)
+			)
+		);
 	};
 
 	return {
 		getTransactionById,
 		addTransactionBetweenUsers,
+		getTransactionListByUserId,
 	};
 };
 

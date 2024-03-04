@@ -1,17 +1,15 @@
 import { Router, json } from 'express';
 import * as Z from 'zod';
 import { userManager } from 'src/Controllers';
-import {
-	isDefaultError,
-	zodValidateBody,
-	zodValidateQuery,
-} from 'src/Middlewares/Validation';
+import { zodValidateBody, zodValidateQuery } from 'src/Middlewares/Validation';
+import { safeRequest } from 'src/Middlewares/SafeRequest';
 
 const UserRouter = Router();
 UserRouter.use(json());
 
-UserRouter.get('/', async (req, res) => {
-	try {
+UserRouter.get(
+	'/',
+	safeRequest(async (req, res) => {
 		const query = zodValidateQuery(
 			Z.object({
 				userId: Z.string(),
@@ -24,15 +22,12 @@ UserRouter.get('/', async (req, res) => {
 		const userData = await userManager.getUserByUserId(userId);
 
 		res.send(userData);
-	} catch (e) {
-		if (isDefaultError(e)) {
-			res.status(e.code).send(e.message);
-		}
-	}
-});
+	})
+);
 
-UserRouter.patch('/', async (req, res) => {
-	try {
+UserRouter.patch(
+	'/',
+	safeRequest(async (req, res) => {
 		const query = zodValidateBody(
 			Z.object({
 				userId: Z.string(),
@@ -49,19 +44,16 @@ UserRouter.patch('/', async (req, res) => {
 		const userData = await userManager.updateUserFromUserId(userId, query.data);
 
 		res.send(userData);
-	} catch (e) {
-		if (isDefaultError(e)) {
-			res.status(e.code).send(e.message);
-		}
-	}
-});
+	})
+);
 
-UserRouter.post('/', async (req, res) => {
-	try {
+UserRouter.post(
+	'/',
+	safeRequest(async (req, res) => {
 		const query = zodValidateBody(
 			Z.object({
 				userId: Z.string(),
-				coins: Z.number().gt(0).optional(),
+				coins: Z.number().optional(),
 			}),
 			req
 		);
@@ -69,13 +61,42 @@ UserRouter.post('/', async (req, res) => {
 		const { userId, coins } = query;
 		const userData = await userManager.createUser(userId, coins);
 
-		console.log(userData);
-
 		res.send(userData);
-	} catch (e) {
-		if (isDefaultError(e)) {
-			res.status(e.code).send(e.message);
-		}
-	}
-});
+	})
+);
+
+UserRouter.post(
+	'/add-balance',
+	safeRequest(async (req, res) => {
+		const { userId, amount, payload } = zodValidateBody(
+			Z.object({
+				userId: Z.string(),
+				amount: Z.number().gt(0),
+				payload: Z.any(),
+			}),
+			req
+		);
+
+		const response = await userManager.addBalance(userId, amount, payload);
+		res.send(response);
+	})
+);
+
+UserRouter.post(
+	'/spend',
+	safeRequest(async (req, res) => {
+		const { userId, amount, payload } = zodValidateBody(
+			Z.object({
+				userId: Z.string(),
+				amount: Z.number().gt(0),
+				payload: Z.any(),
+			}),
+			req
+		);
+
+		const response = await userManager.spendCoins(userId, amount, payload);
+		res.send(response);
+	})
+);
+
 export default UserRouter;

@@ -27,7 +27,5 @@ export type WithID<T extends keyof AllEntitiesModel> = {
 } & AllEntitiesModel[T];
 
 export type DatabaseFriendlyEntityModel<T extends keyof AllEntitiesModel> = {
-	[key in keyof WithID<T>]: WithID<T>[key] extends any[]
-		? FieldValue | WithID<T>[key]
-		: WithID<T>[key];
+	[key in keyof WithID<T>]: FieldValue | WithID<T>[key];
 };
