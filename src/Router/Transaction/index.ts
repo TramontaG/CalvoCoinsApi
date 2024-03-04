@@ -7,9 +7,11 @@ import {
 	zodValidateQuery,
 } from 'src/Middlewares/Validation';
 import { safeRequest } from 'src/Middlewares/SafeRequest';
+import { useJWT } from 'src/Middlewares/Auth';
 
 const TransactionRouter = Router();
 TransactionRouter.use(json());
+TransactionRouter.use(useJWT());
 
 TransactionRouter.get(
 	'/',
@@ -54,7 +56,6 @@ TransactionRouter.post(
 		const transactionData = zodValidateBody(
 			Z.object({
 				transactionRequestPayload: jsonSchema,
-				// [TODO]: find a way to export the origin types
 				transactionOrigin: Z.string().regex(/^(WA)$|^(MASTER)$/),
 				amount: Z.number().gt(0),
 				from: Z.string(),

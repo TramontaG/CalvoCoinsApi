@@ -3,9 +3,11 @@ import * as Z from 'zod';
 import { userManager } from 'src/Controllers';
 import { zodValidateBody, zodValidateQuery } from 'src/Middlewares/Validation';
 import { safeRequest } from 'src/Middlewares/SafeRequest';
+import { useJWT } from 'src/Middlewares/Auth';
 
 const UserRouter = Router();
 UserRouter.use(json());
+UserRouter.use(useJWT());
 
 UserRouter.get(
 	'/',
