@@ -67,6 +67,25 @@ const UserManager = () => {
 		return query.length > 0;
 	};
 
+	const assertUserExists = async (userId: string) => {
+		const users = await UserDB.runQuery(
+			UserDB.createQuery(query => {
+				return query
+					.select(
+						'coins',
+						'id',
+						'lastPremiumBought',
+						'premiumValidUntil',
+						'transactionHistory',
+						'userId'
+					)
+					.where('userId', '==', userId);
+			})
+		);
+
+		return users.length > 0;
+	};
+
 	const createUser = async (userId: string, initialBalance = 0) => {
 		const userAlreadyThere = await assertUniqueUser(userId);
 
@@ -165,6 +184,7 @@ const UserManager = () => {
 		createUser,
 		addBalance,
 		spendCoins,
+		assertUserExists,
 	};
 };
 

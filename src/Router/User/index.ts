@@ -122,4 +122,23 @@ UserRouter.post(
 	})
 );
 
+UserRouter.get(
+	'/exists',
+	safeRequest(async (req, res) => {
+		const { userId } = zodValidateQuery(
+			Z.object({
+				userId: Z.string(),
+			}),
+			req
+		);
+
+		const exists = await userManager.assertUserExists(userId);
+
+		res.send({
+			success: true,
+			userExists: exists,
+		});
+	})
+);
+
 export default UserRouter;
