@@ -40,11 +40,41 @@ TransactionRouter.get(
 			req
 		);
 
-		console.log({ userId });
-
 		const transactionList = await transactionManager.getTransactionListByUserId(
 			userId
 		);
+
+		res.send(transactionList);
+	})
+);
+
+TransactionRouter.get(
+	'/list/debt',
+	safeRequest(async (req, res) => {
+		const { userId } = zodValidateQuery(
+			Z.object({
+				userId: Z.string(),
+			}),
+			req
+		);
+
+		const transactionList = await transactionManager.getDebtListFromUserId(userId);
+
+		res.send(transactionList);
+	})
+);
+
+TransactionRouter.get(
+	'/list/credit',
+	safeRequest(async (req, res) => {
+		const { userId } = zodValidateQuery(
+			Z.object({
+				userId: Z.string(),
+			}),
+			req
+		);
+
+		const transactionList = await transactionManager.getCreditListFromUserId(userId);
 
 		res.send(transactionList);
 	})
@@ -60,18 +90,20 @@ TransactionRouter.post(
 				amount: Z.number().gt(0),
 				from: Z.string(),
 				to: Z.string(),
-				premium: Z.boolean().optional(),
+				premiumSpending: Z.boolean().optional(),
 			}),
 			req
 		);
 
-		const userData = await transactionManager.addTransactionBetweenUsers({
+		const response = await transactionManager.addTransactionBetweenUsers({
 			...transactionData,
 			timestamp: new Date().getTime(),
-			premium: transactionData.premium ?? false,
+			premium: false,
+			premiumSpending: !!transactionData.premiumSpending,
 		});
 
-		res.send(userData);
+		res.send(response);
 	})
 );
+
 export default TransactionRouter;

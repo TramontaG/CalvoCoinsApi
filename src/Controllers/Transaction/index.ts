@@ -1,4 +1,3 @@
-import { returnResponse } from 'src/Controllers/util';
 import { userManager } from '../User';
 import { DbManager } from 'src/Database';
 import { AllEntitiesModel } from 'src/Database/schemas';
@@ -11,7 +10,9 @@ const TransactionManager = () => {
 	const getTransactionById = (id: string) => transactionDb.readEntity(id);
 
 	const addTransactionBetweenUsers = async (
-		transactionData: AllEntitiesModel['transaction']
+		transactionData: AllEntitiesModel['transaction'] & {
+			premiumSpending?: boolean;
+		}
 	) => {
 		const fromUser = await userManager.getUserByUserId(transactionData.from);
 		const toUser = await userManager.getUserByUserId(transactionData.to);
@@ -29,12 +30,20 @@ const TransactionManager = () => {
 
 		await userManager.updateUserFromUserId(transactionData.from, {
 			transactionHistory: FieldValue.arrayUnion(transactionId),
-			coins: fromUser.coins - transactionData.amount,
+			coins:
+				fromUser.userId !== 'MASTER' || transactionData.premiumSpending
+					? FieldValue.increment(transactionData.amount * -1)
+					: fromUser.coins,
 		});
 
 		await userManager.updateUserFromUserId(transactionData.to, {
 			transactionHistory: FieldValue.arrayUnion(transactionId),
 			coins: toUser.coins + transactionData.amount,
+			premiumValidUntil:
+				transactionData.premiumValidUntil ?? toUser.premiumValidUntil,
+			lastPremiumBought: transactionData.premium
+				? transactionData.timestamp
+				: toUser.lastPremiumBought,
 		});
 
 		return transaction;
@@ -56,9 +65,45 @@ const TransactionManager = () => {
 					.where(
 						Filter.or(
 							Filter.where('from', '==', userId),
-							Filter.where('to', '==', 'userId')
+							Filter.where('to', '==', userId)
 						)
 					)
+			)
+		);
+	};
+
+	const getDebtListFromUserId = async (userId: string) => {
+		return transactionDb.runQuery(
+			transactionDb.createQuery(query =>
+				query
+					.select(
+						'from',
+						'to',
+						'id',
+						'premium',
+						'timestamp',
+						'transactionOrigin',
+						'transactionRequestPayload'
+					)
+					.where('from', '==', userId)
+			)
+		);
+	};
+
+	const getCreditListFromUserId = async (userId: string) => {
+		return transactionDb.runQuery(
+			transactionDb.createQuery(query =>
+				query
+					.select(
+						'from',
+						'to',
+						'id',
+						'premium',
+						'timestamp',
+						'transactionOrigin',
+						'transactionRequestPayload'
+					)
+					.where('to', '==', userId)
 			)
 		);
 	};
@@ -67,6 +112,8 @@ const TransactionManager = () => {
 		getTransactionById,
 		addTransactionBetweenUsers,
 		getTransactionListByUserId,
+		getDebtListFromUserId,
+		getCreditListFromUserId,
 	};
 };
 

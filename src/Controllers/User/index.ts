@@ -1,9 +1,7 @@
 import { DbManager } from 'src/Database';
 import { AllEntitiesModel, DatabaseFriendlyEntityModel } from 'src/Database/schemas';
 import Crypto from 'crypto';
-import { FieldValue } from 'firebase-admin/firestore';
 import { transactionManager } from '../Transaction';
-import { date } from 'zod';
 
 const UserDB = DbManager('user');
 
@@ -53,12 +51,13 @@ const UserManager = () => {
 		return UserDB.upsertEntity(id, newData);
 	};
 
-	const assertUniqueUser = (userId: string) => {
-		return UserDB.runQuery(
+	const assertUniqueUser = async (userId: string) => {
+		const query = await UserDB.runQuery(
 			UserDB.createQuery(query => {
 				return query.select('id').where('userId', '==', userId);
 			})
-		).then(user => user.length > 0);
+		);
+		return query.length > 0;
 	};
 
 	const createUser = async (userId: string, initialBalance = 0) => {
@@ -93,6 +92,7 @@ const UserManager = () => {
 			timestamp: now,
 			transactionOrigin: 'CalvoCoinsApi',
 			transactionRequestPayload: payload,
+			premiumSpending: false,
 		};
 
 		return transactionManager.addTransactionBetweenUsers(transactionData);
@@ -113,16 +113,10 @@ const UserManager = () => {
 			timestamp: now,
 			transactionOrigin: 'CalvoCoinsApi',
 			transactionRequestPayload: payload,
+			premiumSpending: hasPremiumValid,
 		};
 
-		if (hasPremiumValid) {
-			return transactionManager.addTransactionBetweenUsers({
-				...transactionData,
-				amount: 0,
-			});
-		}
-
-		if (hasEnoughCoins) {
+		if (hasPremiumValid || hasEnoughCoins) {
 			return transactionManager.addTransactionBetweenUsers(transactionData);
 		}
 
@@ -132,8 +126,32 @@ const UserManager = () => {
 		};
 	};
 
+	const setPremiumForUserId = (
+		userId: string,
+		premiumValidFor: number,
+		payload: any
+	) => {
+		const now = new Date().getTime();
+		const premiumExpiration = now + premiumValidFor;
+
+		const transactionData: AllEntitiesModel['transaction'] = {
+			amount: 0,
+			premium: true,
+			from: 'MASTER',
+			to: userId,
+			timestamp: now,
+			transactionOrigin: 'CalvoCoinsApi',
+			transactionRequestPayload: payload,
+			premiumValidUntil: premiumExpiration,
+			premiumSpending: false,
+		};
+
+		return transactionManager.addTransactionBetweenUsers(transactionData);
+	};
+
 	return {
 		getUserByUserId,
+		setPremiumForUserId,
 		getUserById,
 		updateUserFromUserId,
 		updateUserFromId,

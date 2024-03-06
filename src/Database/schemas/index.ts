@@ -16,6 +16,8 @@ export type AllEntitiesModel = {
 		from: string;
 		to: string;
 		premium: boolean;
+		premiumValidUntil?: number;
+		premiumSpending: boolean;
 		timestamp: number;
 	};
 };

@@ -101,4 +101,25 @@ UserRouter.post(
 	})
 );
 
+UserRouter.post(
+	'/set-premium',
+	safeRequest(async (req, res) => {
+		const { premiumValidFor, userId, payload } = zodValidateBody(
+			Z.object({
+				userId: Z.string(),
+				premiumValidFor: Z.number().gt(0),
+				payload: Z.any(),
+			}),
+			req
+		);
+
+		const response = await userManager.setPremiumForUserId(
+			userId,
+			premiumValidFor,
+			payload
+		);
+		res.send(response);
+	})
+);
+
 export default UserRouter;
