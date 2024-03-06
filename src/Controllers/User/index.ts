@@ -26,10 +26,12 @@ const UserManager = () => {
 			console.warn('multiple users with same UserID, returning first result');
 		}
 
-		throw {
-			code: 404,
-			message: 'User does not exist',
-		};
+		if (users.length === 0) {
+			throw {
+				code: 404,
+				message: 'User does not exist',
+			};
+		}
 
 		return users[0];
 	};
