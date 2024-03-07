@@ -31,7 +31,7 @@ const TransactionManager = () => {
 		await userManager.updateUserFromUserId(transactionData.from, {
 			transactionHistory: FieldValue.arrayUnion(transactionId),
 			coins:
-				fromUser.userId !== 'MASTER' || transactionData.premiumSpending
+				fromUser.userId !== 'MASTER' || !transactionData.premiumSpending
 					? FieldValue.increment(transactionData.amount * -1)
 					: fromUser.coins,
 		});
@@ -60,7 +60,8 @@ const TransactionManager = () => {
 						'premium',
 						'timestamp',
 						'transactionOrigin',
-						'transactionRequestPayload'
+						'transactionRequestPayload',
+						'amount'
 					)
 					.where(
 						Filter.or(
@@ -68,6 +69,7 @@ const TransactionManager = () => {
 							Filter.where('to', '==', userId)
 						)
 					)
+					.orderBy('timestamp')
 			)
 		);
 	};
