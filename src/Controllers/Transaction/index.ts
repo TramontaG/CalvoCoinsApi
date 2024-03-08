@@ -28,12 +28,17 @@ const TransactionManager = () => {
 			...transactionData,
 		});
 
+		console.log(transactionData.premiumSpending);
+		const deductCoins =
+			fromUser.userId !== 'MASTER' && !transactionData.premiumSpending;
+
+		console.log(deductCoins);
+
 		await userManager.updateUserFromUserId(transactionData.from, {
 			transactionHistory: FieldValue.arrayUnion(transactionId),
-			coins:
-				fromUser.userId !== 'MASTER' || !transactionData.premiumSpending
-					? FieldValue.increment(transactionData.amount * -1)
-					: fromUser.coins,
+			coins: deductCoins
+				? FieldValue.increment(transactionData.amount * -1)
+				: fromUser.coins,
 		});
 
 		await userManager.updateUserFromUserId(transactionData.to, {

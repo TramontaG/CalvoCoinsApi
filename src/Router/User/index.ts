@@ -35,8 +35,8 @@ UserRouter.patch(
 				userId: Z.string(),
 				data: Z.object({
 					coins: Z.number().gt(0).optional(),
-					lastPremiumBought: Z.number().gt(0).optional(),
-					premiumValidUntil: Z.number().gt(0).optional(),
+					lastPremiumBought: Z.number().optional(),
+					premiumValidUntil: Z.number().optional(),
 				}),
 			}),
 			req
