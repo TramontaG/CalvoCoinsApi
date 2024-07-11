@@ -1,7 +1,7 @@
 import axios, { isAxiosError } from 'axios';
 
 const instance = axios.create({
-	baseURL: 'http://gramont.ddns.net/auth',
+	baseURL: 'https://gramont.ddns.net/auth',
 });
 
 type PermissionCheckResponse =
@@ -36,7 +36,7 @@ export const checkPermissions = async (perms: string[], jwt: string) => {
 		return data.success;
 	} catch (e) {
 		if (isAxiosError(e)) {
-			console.log(e.response);
+			console.warn(e.response);
 			if (e.response!.status! > 499) {
 				return undefined;
 			} else {
